@@ -30,7 +30,11 @@ function Navbar() {
         &nbsp;
         &nbsp;
         &nbsp;
-  
+        <Link to='/user'>User</Link>
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        &nbsp;
         <button onClick={handleLogout}>logout</button>
     </nav>
   )

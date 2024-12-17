@@ -242,24 +242,21 @@ function Transactions() {
         <table>
           <thead>
             <tr>
+              <th>Transactions ID</th>
               <th>From Account</th>
               <th>To Account</th>
               <th>Amount</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {transactions.map((transaction, index) => (
               <tr key={index}>
+                <td>{transaction.id}</td>
                 <td>{transaction.account_from}</td>
                 <td>{transaction.account_to}</td>
                 <td>{transaction.amount}</td>
                 <td>{new Date(transaction.transaction_date).toLocaleString()}</td>
-                <td>
-                  <button onClick={() => handleEditTransaction(transaction)}>Edit</button>
-                  <button onClick={() => handleDeleteTransaction(transaction.id)}>Delete</button>
-                </td>
               </tr>
             ))}
           </tbody>
