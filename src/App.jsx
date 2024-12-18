@@ -7,6 +7,7 @@ import { Routes,Route } from 'react-router-dom'
 import Login from './Page/Login'
 import Transactions from './components/Transactions'
 import User from './components/User'
+import Acc from './components/Acc'
 
 function App() {
   
@@ -19,6 +20,7 @@ function App() {
     <Route path='/login' element={<Login/>}/>
     <Route path='/transactions' element={<Transactions/>}/>
     <Route path='/user' element={<User/>}/>
+    <Route path='/acc' element={<Acc/>}/>
   </Routes>
   </>
   )

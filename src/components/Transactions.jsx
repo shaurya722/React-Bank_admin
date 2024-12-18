@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Tran_data from './Tran_data'
 
 function Transactions() {
   const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState([]); // Default as an empty array
   const [selectedAccountFrom, setSelectedAccountFrom] = useState("");
   const [selectedAccountTo, setSelectedAccountTo] = useState("");
   const [selectedBankFrom, setSelectedBankFrom] = useState("");
@@ -11,7 +12,6 @@ function Transactions() {
   const [amount, setAmount] = useState("");
   const [paymentOption, setPaymentOption] = useState("Transfer Now");
   const [time, setTime] = useState("");
-  const [editingTransaction, setEditingTransaction] = useState(null); // For editing
   const token = localStorage.getItem("accessToken");
 
   const API_ACCOUNTS = "http://localhost:8000/home/accounts/"; // API endpoint to fetch accounts
@@ -25,6 +25,7 @@ function Transactions() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAccounts(res.data); // Storing accounts data
+        console.log('account:',res.data);
       } catch (err) {
         console.error("Error fetching accounts:", err.response?.data || err.message);
       }
@@ -35,17 +36,18 @@ function Transactions() {
         const res = await axios.get(API_TRANSACTION, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTransactions(res.data.transactions); 
+        setTransactions(res.data);
+        console.log('trnsactions:',res.data); // Set transactions directly to the response data
       } catch (err) {
         console.error("Error fetching transactions:", err.response?.data || err.message);
       }
     };
-    
+
     fetchAccounts();
     fetchTransactions();
   }, [token]);
 
-  // Handle transaction submission (Create or Update)
+  // Handle transaction submission
   const handleTransfer = async () => {
     if (!selectedAccountFrom || !selectedBankFrom || !selectedAccountTo || !selectedBankTo || !amount) {
       alert("All fields are required.");
@@ -57,67 +59,37 @@ function Transactions() {
       return;
     }
 
-    const transactionData = {
-      account_from: selectedAccountFrom,
-      bank_from: selectedBankFrom,
-      account_to: selectedAccountTo,
-      bank_to: selectedBankTo,
-      amount: amount,
-      time: paymentOption === "Schedule Payment" ? time : null, // Only send time if scheduling
-      payment_option: paymentOption,
-    };
-
     try {
-      let res;
-      if (editingTransaction) {
-        // If editing, send a PUT request to update the transaction
-        res = await axios.put(`${API_TRANSACTION}${editingTransaction.id}/`, transactionData, {
+      const res = await axios.post(
+        API_TRANSACTION,
+        {
+          account_from: selectedAccountFrom,
+          bank_from: selectedBankFrom,
+          account_to: selectedAccountTo,
+          bank_to: selectedBankTo,
+          amount: amount,
+          time: paymentOption === "Schedule Payment" ? time : null, // Only send time if scheduling
+          payment_option: paymentOption,
+        },
+        {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        setTransactions(transactions.map((txn) => (txn.id === editingTransaction.id ? res.data : txn)));
-        setEditingTransaction(null); // Reset editing state
-      } else {
-        // Create new transaction
-        res = await axios.post(API_TRANSACTION, transactionData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTransactions([...transactions, res.data]); // Add new transaction to the list
-      }
+        }
+      );
       alert("Transaction successful!");
+
+      // Refresh transactions
+      const updatedTransactions = await axios.get(API_TRANSACTION, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTransactions(updatedTransactions.data);
     } catch (err) {
-      console.error("Error creating/updating transaction:", err.response?.data || err.message);
+      console.error("Error creating transaction:", err.response?.data || err.message);
       alert("Transaction failed. Please try again.");
     }
   };
 
-  // Handle transaction update
-  const handleEditTransaction = (transaction) => {
-    setEditingTransaction(transaction);
-    setSelectedAccountFrom(transaction.account_from);
-    setSelectedBankFrom(transaction.bank_from);
-    setSelectedAccountTo(transaction.account_to);
-    setSelectedBankTo(transaction.bank_to);
-    setAmount(transaction.amount);
-    setPaymentOption(transaction.payment_option);
-    setTime(transaction.time);
-  };
-
-  // Handle transaction deletion
-  const handleDeleteTransaction = async (transactionId) => {
-    try {
-      await axios.delete(`${API_TRANSACTION}${transactionId}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTransactions(transactions.filter((transaction) => transaction.id !== transactionId)); // Remove from list
-      alert("Transaction deleted successfully!");
-    } catch (err) {
-      console.error("Error deleting transaction:", err.response?.data || err.message);
-      alert("Failed to delete transaction.");
-    }
-  };
-
   // Extract unique bank names
-  const banks = [...new Set(accounts.map(account => account.bank))];
+  const banks = [...new Set(accounts.map((account) => account.bank))];
 
   return (
     <>
@@ -234,15 +206,14 @@ function Transactions() {
 
       {/* Transfer Button */}
       <div>
-        <button onClick={handleTransfer}>{editingTransaction ? "Update" : "Transfer"}</button>
+        <button onClick={handleTransfer}>Transfer</button>
       </div>
 
-      <h2>Recent Transactions</h2>
-      {transactions.length > 0 ? (
+      {/* <h2>Recent Transactions</h2>
+      {transactions && transactions.length > 0 ? (
         <table>
           <thead>
             <tr>
-              <th>Transactions ID</th>
               <th>From Account</th>
               <th>To Account</th>
               <th>Amount</th>
@@ -250,20 +221,33 @@ function Transactions() {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction, index) => (
-              <tr key={index}>
-                <td>{transaction.id}</td>
-                <td>{transaction.account_from}</td>
-                <td>{transaction.account_to}</td>
-                <td>{transaction.amount}</td>
-                <td>{new Date(transaction.transaction_date).toLocaleString()}</td>
-              </tr>
-            ))}
+            {transactions.map((transaction, index) => {
+              const accountFrom = accounts.find((acc) => acc.id === transaction.account_from);
+              const accountTo = accounts.find((acc) => acc.id === transaction.account_to);
+              return (
+                <tr key={index}>
+                  <td>
+                    {accountFrom
+                      ? `${accountFrom.account_type} - ${accountFrom.balance} (${accountFrom.bank})`
+                      : transaction.account_from}
+                  </td>
+                  <td>
+                    {accountTo
+                      ? `${accountTo.account_type} - ${accountTo.balance} (${accountTo.bank})`
+                      : transaction.account_to}
+                  </td>
+                  <td>{transaction.amount}</td>
+                  <td>{new Date(transaction.transaction_date).toLocaleString()}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       ) : (
         <p>No transactions found.</p>
-      )}
+      )} */}
+
+      <Tran_data/>
     </>
   );
 }

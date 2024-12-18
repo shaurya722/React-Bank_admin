@@ -35,6 +35,11 @@ function Navbar() {
         &nbsp;
         &nbsp;
         &nbsp;
+        <Link to='/acc'>Account</Link>
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        &nbsp;
         <button onClick={handleLogout}>logout</button>
     </nav>
   )
