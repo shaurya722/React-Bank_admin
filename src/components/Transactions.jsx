@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from "react";
+import Tran_data from './Tran_data'; // Ensure this component is implemented properly.
 import axios from "axios";
-import Tran_data from './Tran_data'
 
 function Transactions() {
   const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]); // Default as an empty array
   const [selectedAccountFrom, setSelectedAccountFrom] = useState("");
-  const [selectedAccountTo, setSelectedAccountTo] = useState("");
-  const [selectedBankFrom, setSelectedBankFrom] = useState("");
-  const [selectedBankTo, setSelectedBankTo] = useState("");
+  const [accountTo, setAccountTo] = useState("");
   const [amount, setAmount] = useState("");
-  const [paymentOption, setPaymentOption] = useState("Transfer Now");
+  // const [paymentOption, setPaymentOption] = useState("Transfer Now");
   const [time, setTime] = useState("");
   const token = localStorage.getItem("accessToken");
 
   const API_ACCOUNTS = "http://localhost:8000/home/accounts/"; // API endpoint to fetch accounts
   const API_TRANSACTION = "http://localhost:8000/home/transactions/"; // API endpoint for transactions
 
-  // Fetch accounts and transactions from API
+  // Fetch accounts from API
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -25,31 +22,18 @@ function Transactions() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAccounts(res.data); // Storing accounts data
-        console.log('account:',res.data);
+        console.log('Accounts:', res.data);
       } catch (err) {
         console.error("Error fetching accounts:", err.response?.data || err.message);
       }
     };
 
-    const fetchTransactions = async () => {
-      try {
-        const res = await axios.get(API_TRANSACTION, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTransactions(res.data);
-        console.log('trnsactions:',res.data); // Set transactions directly to the response data
-      } catch (err) {
-        console.error("Error fetching transactions:", err.response?.data || err.message);
-      }
-    };
-
     fetchAccounts();
-    fetchTransactions();
   }, [token]);
 
   // Handle transaction submission
   const handleTransfer = async () => {
-    if (!selectedAccountFrom || !selectedBankFrom || !selectedAccountTo || !selectedBankTo || !amount) {
+    if (!selectedAccountFrom || !accountTo || !amount) {
       alert("All fields are required.");
       return;
     }
@@ -64,9 +48,7 @@ function Transactions() {
         API_TRANSACTION,
         {
           account_from: selectedAccountFrom,
-          bank_from: selectedBankFrom,
-          account_to: selectedAccountTo,
-          bank_to: selectedBankTo,
+          account_to: accountTo,
           amount: amount,
           time: paymentOption === "Schedule Payment" ? time : null, // Only send time if scheduling
           payment_option: paymentOption,
@@ -76,41 +58,15 @@ function Transactions() {
         }
       );
       alert("Transaction successful!");
-
-      // Refresh transactions
-      const updatedTransactions = await axios.get(API_TRANSACTION, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTransactions(updatedTransactions.data);
     } catch (err) {
       console.error("Error creating transaction:", err.response?.data || err.message);
       alert("Transaction failed. Please try again.");
     }
   };
 
-  // Extract unique bank names
-  const banks = [...new Set(accounts.map((account) => account.bank))];
-
   return (
     <>
       <h1>Transactions</h1>
-
-      {/* Sender Bank */}
-      <div>
-        <label htmlFor="bank_from">From Bank:</label>
-        <select
-          id="bank_from"
-          value={selectedBankFrom}
-          onChange={(e) => setSelectedBankFrom(e.target.value)}
-        >
-          <option value="">Select Bank</option>
-          {banks.map((bank, index) => (
-            <option key={index} value={bank}>
-              {bank}
-            </option>
-          ))}
-        </select>
-      </div>
 
       {/* Sender Account */}
       <div>
@@ -121,28 +77,9 @@ function Transactions() {
           onChange={(e) => setSelectedAccountFrom(e.target.value)}
         >
           <option value="">Select Account</option>
-          {accounts
-            .filter((account) => account.bank === selectedBankFrom)
-            .map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.account_type} - {account.balance} ({account.bank})
-              </option>
-            ))}
-        </select>
-      </div>
-
-      {/* Recipient Bank */}
-      <div>
-        <label htmlFor="bank_to">To Bank:</label>
-        <select
-          id="bank_to"
-          value={selectedBankTo}
-          onChange={(e) => setSelectedBankTo(e.target.value)}
-        >
-          <option value="">Select Bank</option>
-          {banks.map((bank, index) => (
-            <option key={index} value={bank}>
-              {bank}
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.id}-{account.account_type} - {account.balance} ({account.bank})
             </option>
           ))}
         </select>
@@ -152,18 +89,16 @@ function Transactions() {
       <div>
         <label htmlFor="account_to">To Account:</label>
         <select
-          id="account_to"
-          value={selectedAccountTo}
-          onChange={(e) => setSelectedAccountTo(e.target.value)}
+          id="account_from"
+          value={accountTo}
+          onChange={(e) => setAccountTo(e.target.value)}
         >
           <option value="">Select Account</option>
-          {accounts
-            .filter((account) => account.bank === selectedBankTo)
-            .map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.account_type} - {account.balance} ({account.bank})
-              </option>
-            ))}
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.id}-{account.account_type} - {account.balance} ({account.bank})
+            </option>
+          ))}
         </select>
       </div>
 
@@ -174,12 +109,13 @@ function Transactions() {
           id="amount"
           type="number"
           value={amount}
+          min={0}
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
 
       {/* Payment Option */}
-      <div>
+      {/* <div>
         <label htmlFor="paymentOption">Payment Option:</label>
         <select
           id="paymentOption"
@@ -189,9 +125,9 @@ function Transactions() {
           <option value="Transfer Now">Transfer Now</option>
           <option value="Schedule Payment">Schedule Payment</option>
         </select>
-      </div>
+      </div> */}
 
-      {/* Schedule Payment Time */}
+      {/* Schedule Payment Time
       {paymentOption === "Schedule Payment" && (
         <div>
           <label htmlFor="time">Schedule Time (minutes):</label>
@@ -202,52 +138,15 @@ function Transactions() {
             onChange={(e) => setTime(e.target.value)}
           />
         </div>
-      )}
+      )} */}
 
       {/* Transfer Button */}
       <div>
         <button onClick={handleTransfer}>Transfer</button>
       </div>
 
-      {/* <h2>Recent Transactions</h2>
-      {transactions && transactions.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>From Account</th>
-              <th>To Account</th>
-              <th>Amount</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((transaction, index) => {
-              const accountFrom = accounts.find((acc) => acc.id === transaction.account_from);
-              const accountTo = accounts.find((acc) => acc.id === transaction.account_to);
-              return (
-                <tr key={index}>
-                  <td>
-                    {accountFrom
-                      ? `${accountFrom.account_type} - ${accountFrom.balance} (${accountFrom.bank})`
-                      : transaction.account_from}
-                  </td>
-                  <td>
-                    {accountTo
-                      ? `${accountTo.account_type} - ${accountTo.balance} (${accountTo.bank})`
-                      : transaction.account_to}
-                  </td>
-                  <td>{transaction.amount}</td>
-                  <td>{new Date(transaction.transaction_date).toLocaleString()}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : (
-        <p>No transactions found.</p>
-      )} */}
-
-      <Tran_data/>
+      {/* Recent Transactions */}
+      <Tran_data />
     </>
   );
 }

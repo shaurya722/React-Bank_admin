@@ -14,7 +14,7 @@ const AccountsTable = () => {
     balance: "",
     bank: "",
   });
-  const [user, setUser] = useState(null);  // State to store user info
+  const [user, setUser] = useState('');  // State to store user info
 
   const API = "http://localhost:8000/home/accounts/"; // Replace with your API endpoint
   const token = localStorage.getItem("accessToken");
@@ -182,7 +182,7 @@ const AccountsTable = () => {
           placeholder="user Id"
           value={newAccount.user}
           onChange={(e) =>
-            setNewAccount({ ...newAccount, bank: e.target.value })
+            setNewAccount({ ...newAccount, user: e.target.value })
           }
         />
         <button onClick={handleCreateAccount}>Create</button>
