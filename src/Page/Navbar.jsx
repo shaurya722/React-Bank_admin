@@ -40,6 +40,11 @@ function Navbar() {
         &nbsp;
         &nbsp;
         &nbsp;
+        <Link to='/user-side'>UserSide</Link>
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        &nbsp;
         <button onClick={handleLogout}>logout</button>
     </nav>
   )

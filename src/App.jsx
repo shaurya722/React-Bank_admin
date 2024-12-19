@@ -8,6 +8,7 @@ import Login from './Page/Login'
 import Transactions from './components/Transactions'
 import User from './components/User'
 import Acc from './components/Acc'
+import UserSide from './components/UserSide'
 
 function App() {
   
@@ -21,6 +22,7 @@ function App() {
     <Route path='/transactions' element={<Transactions/>}/>
     <Route path='/user' element={<User/>}/>
     <Route path='/acc' element={<Acc/>}/>
+    <Route path='/user-side' element={<UserSide/>}/>
   </Routes>
   </>
   )
